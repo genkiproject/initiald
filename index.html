@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Initial D Street Stage - 转速表盘替换工具</title>
+<link rel="icon" type="image/png" href="CAUGE/caution_overspeed.png">
+<style>
+/* ===== CSS Reset & Variables ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #0a0e17;
+  --bg-secondary: #111827;
+  --bg-card: #1a2236;
+  --bg-card-hover: #1f2a42;
+  --accent: #e63946;
+  --accent-glow: rgba(230, 57, 70, 0.3);
+  --accent-light: #ff6b6b;
+  --text-primary: #f0f0f0;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
+  --border: #2a3550;
+  --border-light: #374361;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --blue: #3b82f6;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --transition: 0.25s ease;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans SC', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== Background Animation ===== */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    radial-gradient(ellipse at 20% 50%, rgba(230,57,70,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(59,130,246,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(16,185,129,0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ===== Header ===== */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10,14,23,0.92);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+}
+
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--text-primary);
+}
+
+.logo-icon {
+  font-size: 28px;
+  filter: drop-shadow(0 0 8px var(--accent-glow));
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.logo-text span {
+  color: var(--accent);
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.nav-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.05); }
+.nav-btn.active { color: var(--accent); background: rgba(230,57,70,0.1); }
+
+/* ===== Main Layout ===== */
+.main {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 32px 24px 80px;
+}
+
+/* ===== Page Sections ===== */
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== Section Title ===== */
+.section-title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-subtitle {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+/* ===== Gauge Grid ===== */
+.gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.gauge-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.gauge-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow);
+  transform: translateY(-2px);
+}
+
+.gauge-card-image {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: contain;
+  background: radial-gradient(circle, rgba(30,40,60,1) 0%, rgba(10,14,23,1) 100%);
+  padding: 20px;
+}
+
+.gauge-card-body {
+  padding: 16px 20px 20px;
+}
+
+.gauge-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.gauge-card-name {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-preset {
+  background: rgba(230,57,70,0.15);
+  color: var(--accent-light);
+  border: 1px solid rgba(230,57,70,0.3);
+}
+
+.badge-custom {
+  background: rgba(59,130,246,0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(59,130,246,0.3);
+}
+
+.gauge-card-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+
+.gauge-card-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: var(--transition);
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+.btn-primary:hover { background: #d32f3f; box-shadow: 0 0 16px var(--accent-glow); }
+
+.btn-secondary {
+  background: rgba(255,255,255,0.08);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.12); border-color: var(--border-light); }
+
+.btn-success {
+  background: var(--success);
+  color: white;
+}
+.btn-success:hover { background: #0d9668; }
+
+.btn-blue {
+  background: var(--blue);
+  color: white;
+}
+.btn-blue:hover { background: #2563eb; }
+
+.btn-lg {
+  padding: 12px 24px;
+  font-size: 15px;
+  border-radius: 10px;
+}
+
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 18px;
+}
+
+/* ===== Upload Area ===== */
+.upload-area {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  background: rgba(255,255,255,0.02);
+  margin-bottom: 32px;
+}
+
+.upload-area:hover {
+  border-color: var(--accent);
+  background: rgba(230,57,70,0.04);
+}
+
+.upload-area.dragover {
+  border-color: var(--accent);
+  background: rgba(230,57,70,0.08);
+  box-shadow: 0 0 30px var(--accent-glow);
+}
+
+.upload-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.6; }
+.upload-text { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.upload-hint { color: var(--text-muted); font-size: 13px; }
+
+/* ===== Modal / Preview ===== */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  max-width: 560px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title { font-size: 18px; font-weight: 700; }
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: var(--transition);
+}
+.modal-close:hover { color: var(--text-primary); }
+
+.modal-body { padding: 24px; }
+
+.modal-preview-img {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto 24px;
+  display: block;
+  border-radius: var(--radius);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ===== Download Package Section ===== */
+.package-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  margin-top: 32px;
+}
+
+.package-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.package-desc {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.7;
+  margin-bottom: 20px;
+}
+
+.package-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ===== Platform Tabs ===== */
+.platform-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 4px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  width: fit-content;
+}
+
+.platform-tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.platform-tab.active {
+  background: var(--accent);
+  color: white;
+}
+
+.platform-content { display: none; }
+.platform-content.active { display: block; }
+
+/* ===== Settings / Help / About Pages ===== */
+.info-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+.info-card h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-card p, .info-card li {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.info-card ul, .info-card ol {
+  padding-left: 20px;
+}
+
+.info-card li { margin-bottom: 8px; }
+
+.info-card code {
+  background: rgba(255,255,255,0.08);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 13px;
+  color: var(--accent-light);
+}
+
+.info-card pre {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  margin: 12px 0;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.info-card pre code {
+  background: none;
+  padding: 0;
+  color: var(--text-primary);
+}
+
+/* ===== About Author ===== */
+.author-card {
+  text-align: center;
+  padding: 48px 32px;
+}
+
+.author-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  margin-bottom: 20px;
+  box-shadow: 0 0 24px var(--accent-glow);
+}
+
+.author-name {
+  font-size: 24px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.author-desc {
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.author-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #00a1d6;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 10px;
+  background: rgba(0,161,214,0.1);
+  border: 1px solid rgba(0,161,214,0.3);
+  transition: var(--transition);
+}
+
+.author-link:hover {
+  background: rgba(0,161,214,0.2);
+  box-shadow: 0 0 20px rgba(0,161,214,0.2);
+}
+
+/* ===== Selected Gauges List ===== */
+.selected-list {
+  margin-top: 16px;
+}
+
+.selected-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.selected-item img {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: var(--bg-primary);
+}
+
+.selected-item-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.selected-item .btn-remove {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  padding: 4px;
+  transition: var(--transition);
+}
+
+.selected-item .btn-remove:hover { color: var(--accent); }
+
+/* ===== Toast ===== */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: var(--shadow);
+  z-index: 300;
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--success); }
+.toast.error { border-color: var(--accent); }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .header-inner { padding: 0; }
+  .logo-text { font-size: 15px; }
+  .nav-btn { padding: 6px 10px; font-size: 13px; }
+  .main { padding: 20px 16px 60px; }
+  .gauge-grid { grid-template-columns: 1fr; }
+  .section-title { font-size: 22px; }
+  .modal { margin: 16px; }
+}
+
+@media (max-width: 480px) {
+  .nav { gap: 0; }
+  .nav-btn { padding: 6px 8px; font-size: 12px; }
+  .logo-text { display: none; }
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+  <div class="header-inner">
+    <a class="logo" href="#">
+      <span class="logo-icon">🏎️</span>
+      <span class="logo-text">Initial D <span>转速表盘</span></span>
+    </a>
+    <nav class="nav">
+      <button class="nav-btn active" data-page="home">表盘</button>
+      <button class="nav-btn" data-page="download">下载</button>
+      <button class="nav-btn" data-page="help">帮助</button>
+      <button class="nav-btn" data-page="about">关于</button>
+    </nav>
+  </div>
+</header>
+
+<!-- Main Content -->
+<main class="main">
+
+  <!-- ===== HOME PAGE ===== -->
+  <section class="page active" id="page-home">
+    <h1 class="section-title">🔧 选择转速表盘</h1>
+    <p class="section-subtitle">
+      选择一个预制表盘或上传你自己的表盘图片，然后前往「下载」页面生成替换文件包。
+    </p>
+
+    <!-- Gauge Grid -->
+    <div class="gauge-grid" id="gaugeGrid">
+      <!-- Preset 1 -->
+      <div class="gauge-card" data-gauge="snow_girl" data-type="preset">
+        <img class="gauge-card-image" src="CAUGE/snow_girl.png" alt="雪女">
+        <div class="gauge-card-body">
+          <div class="gauge-card-header">
+            <span class="gauge-card-name">雪女</span>
+            <span class="badge badge-preset">预制</span>
+          </div>
+          <p class="gauge-card-desc">蓝色冰雪主题表盘，雪女与雪花装饰，清新唯美风格</p>
+          <div class="gauge-card-actions">
+            <button class="btn btn-secondary" onclick="previewGauge('snow_girl')">👁 预览</button>
+            <button class="btn btn-primary" onclick="selectGauge('snow_girl', 'CAUGE/snow_girl.png', '雪女 · 冰雪风暴', 'preset')">✅ 选择</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preset 2 -->
+      <div class="gauge-card" data-gauge="caution_overspeed" data-type="preset">
+        <img class="gauge-card-image" src="CAUGE/caution_overspeed.png" alt="CAUTION OVERSPEED!">
+        <div class="gauge-card-body">
+          <div class="gauge-card-header">
+            <span class="gauge-card-name">深红1号</span>
+            <span class="badge badge-preset">预制</span>
+          </div>
+          <p class="gauge-card-desc">红色警告风格表盘，霸气十足，超速警告主题设计</p>
+          <div class="gauge-card-actions">
+            <button class="btn btn-secondary" onclick="previewGauge('caution_overspeed')">👁 预览</button>
+            <button class="btn btn-primary" onclick="selectGauge('caution_overspeed', 'CAUGE/caution_overspeed.png', 'CAUTION OVERSPEED!', 'preset')">✅ 选择</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload Custom -->
+    <div class="upload-area" id="uploadArea">
+      <div class="upload-icon">📁</div>
+      <div class="upload-text">上传自定义表盘</div>
+      <div class="upload-hint">拖拽 PNG/JPG 图片到此处，或点击选择文件</div>
+      <input type="file" id="fileInput" accept="image/png,image/jpeg,image/bmp" style="display:none" multiple>
+    </div>
+
+    <!-- Custom Gauges -->
+    <div id="customGaugesContainer" style="display:none">
+      <h2 style="font-size:20px; font-weight:700; margin-bottom:16px;">📌 自定义表盘</h2>
+      <div class="gauge-grid" id="customGaugeGrid"></div>
+    </div>
+  </section>
+
+  <!-- ===== DOWNLOAD PAGE ===== -->
+  <section class="page" id="page-download">
+    <h1 class="section-title">📦 下载替换文件</h1>
+    <p class="section-subtitle">
+      选择你的平台，生成并下载表盘替换文件包。将文件放入对应目录即可完成替换。
+    </p>
+
+    <!-- Current Selection -->
+    <div class="info-card" id="selectionCard">
+      <h3>🎯 当前选择的表盘</h3>
+      <div id="currentSelection">
+        <p style="color:var(--text-muted)">尚未选择任何表盘，请前往「表盘」页面选择。</p>
+      </div>
+    </div>
+
+    <!-- Platform Tabs -->
+    <div class="platform-tabs">
+      <button class="platform-tab active" data-platform="windows">🖥 Windows</button>
+      <button class="platform-tab" data-platform="android">📱 Android</button>
+    </div>
+
+    <!-- Windows -->
+    <div class="platform-content active" id="platform-windows">
+      <div class="package-section">
+        <div class="package-title">🖥 Windows 版文件包</div>
+        <div class="package-desc">
+          下载后将文件解压到 PPSSPP 材质目录：<br>
+          <code>C:\Users\你的用户名\Documents\PPSSPP\PSP\TEXTURES\ULJM05093\</code><br><br>
+          文件包内含：
+          <ul style="margin-top:8px; padding-left:20px;">
+            <li><code>textures.ini</code> — 材质配置文件（放在 ULJM05093 根目录）</li>
+            <li><code>CAUGE/speed1.png</code> — 你选择的表盘图片</li>
+          </ul>
+        </div>
+        <div class="package-actions">
+          <button class="btn btn-primary btn-lg" onclick="downloadPackage('windows')" id="btnDownloadWin">
+            📥 下载 Windows 文件包
+          </button>
+          <button class="btn btn-secondary btn-lg" onclick="downloadIniOnly()">
+            📄 仅下载 textures.ini
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Android -->
+    <div class="platform-content" id="platform-android">
+      <div class="package-section">
+        <div class="package-title">📱 Android 版文件包</div>
+        <div class="package-desc">
+          下载后将文件放到 PPSSPP 安卓版材质目录：<br>
+          <code>/Android/data/org.ppsspp.ppsspp/files/PSP/TEXTURES/ULJM05093/</code><br><br>
+          注意：Android 11 及以上版本受 Scoped Storage 限制，可能需要使用文件管理器（如 MT管理器）访问该路径。<br><br>
+          文件包内含：
+          <ul style="margin-top:8px; padding-left:20px;">
+            <li><code>textures.ini</code> — 材质配置文件（放在 ULJM05093/new/ 目录）</li>
+            <li><code>CAUGE/speed1.png</code> — 你选择的表盘图片</li>
+          </ul>
+        </div>
+        <div class="package-actions">
+          <button class="btn btn-primary btn-lg" onclick="downloadPackage('android')" id="btnDownloadAndroid">
+            📥 下载 Android 文件包
+          </button>
+          <button class="btn btn-secondary btn-lg" onclick="downloadIniOnly()">
+            📄 仅下载 textures.ini
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== HELP PAGE ===== -->
+  <section class="page" id="page-help">
+    <h1 class="section-title">📖 使用帮助</h1>
+    <p class="section-subtitle">按照以下步骤操作，轻松替换 Initial D Street Stage 的转速表盘。</p>
+
+    <div class="info-card">
+      <h3>📋 操作步骤</h3>
+      <ol>
+        <li><strong>选择表盘</strong> — 在「表盘」页面选择一个预制表盘，或上传你自己制作的表盘图片（推荐 PNG 格式，透明背景）。</li>
+        <li><strong>下载文件包</strong> — 前往「下载」页面，选择你的平台（Windows / Android），点击下载按钮获取 ZIP 文件包。</li>
+        <li><strong>解压文件</strong> — 将下载的 ZIP 文件解压。</li>
+        <li><strong>放入材质目录</strong> — 将解压后的 <code>textures.ini</code> 和 <code>CAUGE</code> 文件夹放入 PPSSPP 的材质目录中（详见下方路径说明）。</li>
+        <li><strong>启动游戏</strong> — 在 PPSSPP 模拟器中启动 Initial D Street Stage，即可看到替换后的转速表盘。</li>
+      </ol>
+    </div>
+
+    <div class="info-card">
+      <h3>📂 材质目录路径</h3>
+      <p><strong>Windows 默认路径：</strong></p>
+      <pre><code>C:\Users\你的用户名\Documents\PPSSPP\PSP\TEXTURES\ULJM05093\</code></pre>
+      <p><strong>Android 默认路径（Android 11+）：</strong></p>
+      <pre><code>/Android/data/org.ppsspp.ppsspp/files/PSP/TEXTURES/ULJM05093/new/</code></pre>
+      <p style="margin-top:12px">
+        如果你修改过 PPSSPP 的配置路径，请将文件放到你自定义的材质目录中。
+        关键是确保 <code>textures.ini</code> 位于 <code>ULJM05093</code>（或 <code>ULJM05093/new/</code>）目录下，
+        <code>CAUGE</code> 文件夹也在同一目录中。
+      </p>
+    </div>
+
+    <div class="info-card">
+      <h3>⚠️ 注意事项</h3>
+      <ul>
+        <li>如果你已有 <code>textures.ini</code> 文件且包含其他自定义材质，建议手动合并而非直接覆盖。本工具生成的 ini 文件只包含转速表盘的替换配置。</li>
+        <li>表盘图片会被重命名为 <code>speed1.png</code> 并放在 <code>CAUGE</code> 文件夹中。</li>
+        <li>如果替换后没有效果，请检查 PPSSPP 设置中是否启用了「替换纹理」（Replace textures）选项。</li>
+        <li>自定义表盘推荐使用 PNG 格式、正方形尺寸、透明背景，以获得最佳效果。</li>
+      </ul>
+    </div>
+
+    <div class="info-card">
+      <h3>🔧 textures.ini 说明</h3>
+      <p>本工具生成的 <code>textures.ini</code> 内容如下：</p>
+      <pre><code>[options]
+version = 1
+hash = quick
+
+[hashes]
+00000000000000007ca9cd35 = CAUGE/speed1.png
+00000000000000005e3eb2a4 = CAUGE/speed1.png
+000000000000000077e3f8ea = CAUGE/speed1.png
+099c7a90f177f24d262df61a = CAUGE/speed1.png</code></pre>
+      <p style="margin-top:12px">
+        其中 4 个哈希值对应游戏中同一个转速表盘的不同变量地址，全部指向你选择的表盘图片。
+      </p>
+    </div>
+  </section>
+
+  <!-- ===== ABOUT PAGE ===== -->
+  <section class="page" id="page-about">
+    <h1 class="section-title">👤 关于作者</h1>
+    <p class="section-subtitle">这个工具的创意和开发</p>
+
+    <div class="info-card author-card">
+      <img class="author-avatar" src="CAUGE/caution_overspeed.png" alt="作者头像">
+      <div class="author-name">Initial D 转速表盘替换工具</div>
+      <p class="author-desc">
+        本工具由 Bilibili UP主 开发，旨在为 Initial D Street Stage (PPSSPP) 玩家提供便捷的转速表盘自定义体验。<br><br>
+        如果你喜欢这个工具，欢迎关注我的 Bilibili 主页，获取更多 Initial D 相关内容！
+      </p>
+      <a class="author-link" href="https://space.bilibili.com/89847924" target="_blank" rel="noopener">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.813 4.653h.854c1.51.054 2.769.578 3.773 1.574 1.004.995 1.524 2.249 1.56 3.76v7.36c-.036 1.51-.556 2.769-1.56 3.773s-2.262 1.524-3.773 1.56H5.333c-1.51-.036-2.769-.556-3.773-1.56S.036 18.858 0 17.347v-7.36c.036-1.511.556-2.765 1.56-3.76 1.004-.996 2.262-1.52 3.773-1.574h.774l-1.174-1.12a1.234 1.234 0 0 1-.373-.906c0-.356.124-.658.373-.907l.027-.027c.267-.249.573-.373.92-.373.347 0 .653.124.92.373L9.653 4.44c.071.071.134.142.187.213h4.267a.836.836 0 0 1 .16-.213l2.853-2.747c.267-.249.573-.373.92-.373.347 0 .662.151.929.4.267.249.391.551.391.907 0 .355-.124.657-.373.906zM5.333 7.24c-.746.018-1.373.276-1.88.773-.506.498-.769 1.13-.786 1.894v7.52c.017.764.28 1.395.786 1.893.507.498 1.134.756 1.88.773h13.334c.746-.017 1.373-.275 1.88-.773.506-.498.769-1.129.786-1.893v-7.52c-.017-.765-.28-1.396-.786-1.894-.507-.497-1.134-.755-1.88-.773zM8 11.107c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c.017-.391.15-.711.4-.96.249-.249.56-.373.933-.373zm8 0c.373 0 .684.124.933.373.25.249.383.569.4.96v1.173c-.017.391-.15.711-.4.96-.249.25-.56.374-.933.374s-.684-.125-.933-.374c-.25-.249-.383-.569-.4-.96V12.44c.017-.391.15-.711.4-.96.249-.249.56-.373.933-.373z"/></svg>
+        访问 Bilibili 主页
+      </a>
+    </div>
+
+    <div class="info-card">
+      <h3>💡 项目信息</h3>
+      <ul>
+        <li><strong>适用游戏：</strong>Initial D Street Stage (ULJM05093)</li>
+        <li><strong>适用模拟器：</strong>PPSSPP（Windows / Android / 其他平台）</li>
+        <li><strong>功能：</strong>可视化转速表盘材质替换</li>
+        <li><strong>技术：</strong>纯前端实现，无需后端服务器，可部署到 GitHub Pages</li>
+        <li><strong>开源协议：</strong>免费使用，欢迎分享</li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- Preview Modal -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="previewTitle">表盘预览</span>
+      <button class="modal-close" onclick="closePreview()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <img class="modal-preview-img" id="previewImage" src="" alt="预览">
+      <div class="modal-actions" id="previewActions"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== Constants =====
+const TACHOMETER_HASHES = [
+  '00000000000000007ca9cd35',
+  '00000000000000005e3eb2a4',
+  '000000000000000077e3f8ea',
+  '099c7a90f177f24d262df61a'
+];
+
+const SPEED_FILENAME = 'speed1.png';
+
+// ===== State =====
+let selectedGauge = null; // { id, src, name, type, blob? }
+let customGauges = []; // [{ id, name, dataUrl }]
+let customIdCounter = 0;
+
+// ===== Navigation =====
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const page = btn.dataset.page;
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    if (page === 'download') updateSelectionDisplay();
+  });
+});
+
+// Platform tabs
+document.querySelectorAll('.platform-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.platform-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.platform-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('platform-' + tab.dataset.platform).classList.add('active');
+  });
+});
+
+// ===== Gauge Selection =====
+function selectGauge(id, src, name, type) {
+  selectedGauge = { id, src, name, type };
+  
+  // Update visual selection
+  document.querySelectorAll('.gauge-card').forEach(card => {
+    card.style.borderColor = '';
+    card.style.boxShadow = '';
+  });
+  const card = document.querySelector(`.gauge-card[data-gauge="${id}"]`);
+  if (card) {
+    card.style.borderColor = 'var(--success)';
+    card.style.boxShadow = '0 0 20px rgba(16,185,129,0.3)';
+  }
+  
+  showToast('✅ 已选择: ' + name, 'success');
+}
+
+function selectCustomGauge(id) {
+  const gauge = customGauges.find(g => g.id === id);
+  if (!gauge) return;
+  selectedGauge = { id: gauge.id, src: gauge.dataUrl, name: gauge.name, type: 'custom' };
+  
+  document.querySelectorAll('.gauge-card').forEach(card => {
+    card.style.borderColor = '';
+    card.style.boxShadow = '';
+  });
+  const card = document.querySelector(`.gauge-card[data-gauge="${id}"]`);
+  if (card) {
+    card.style.borderColor = 'var(--success)';
+    card.style.boxShadow = '0 0 20px rgba(16,185,129,0.3)';
+  }
+  
+  showToast('✅ 已选择: ' + gauge.name, 'success');
+}
+
+// ===== Preview =====
+function previewGauge(id) {
+  const modal = document.getElementById('previewModal');
+  const img = document.getElementById('previewImage');
+  const title = document.getElementById('previewTitle');
+  const actions = document.getElementById('previewActions');
+  
+  let gauge;
+  if (id === 'snow_girl') {
+    gauge = { name: '雪女 · 冰雪风暴', src: 'CAUGE/snow_girl.png', type: 'preset', id: 'snow_girl' };
+  } else if (id === 'caution_overspeed') {
+    gauge = { name: 'CAUTION OVERSPEED!', src: 'CAUGE/caution_overspeed.png', type: 'preset', id: 'caution_overspeed' };
+  } else {
+    const custom = customGauges.find(g => g.id === id);
+    if (!custom) return;
+    gauge = { name: custom.name, src: custom.dataUrl, type: 'custom', id: custom.id };
+  }
+  
+  img.src = gauge.src;
+  title.textContent = gauge.name;
+  
+  if (gauge.type === 'preset') {
+    actions.innerHTML = `
+      <button class="btn btn-primary btn-lg" onclick="selectGauge('${gauge.id}', '${gauge.src}', '${gauge.name}', 'preset'); closePreview();">✅ 选择此表盘</button>
+      <button class="btn btn-secondary btn-lg" onclick="closePreview()">关闭</button>
+    `;
+  } else {
+    actions.innerHTML = `
+      <button class="btn btn-primary btn-lg" onclick="selectCustomGauge('${gauge.id}'); closePreview();">✅ 选择此表盘</button>
+      <button class="btn btn-secondary btn-lg" onclick="removeCustomGauge('${gauge.id}'); closePreview();">🗑 删除</button>
+      <button class="btn btn-secondary btn-lg" onclick="closePreview()">关闭</button>
+    `;
+  }
+  
+  modal.classList.add('active');
+}
+
+function closePreview() {
+  document.getElementById('previewModal').classList.remove('active');
+}
+
+// Close modal on overlay click
+document.getElementById('previewModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closePreview();
+});
+
+// ===== Custom Gauge Upload =====
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('fileInput');
+
+uploadArea.addEventListener('click', () => fileInput.click());
+
+uploadArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+  uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  uploadArea.classList.remove('dragover');
+  handleFiles(e.dataTransfer.files);
+});
+
+fileInput.addEventListener('change', () => {
+  handleFiles(fileInput.files);
+  fileInput.value = '';
+});
+
+function handleFiles(files) {
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) {
+      showToast('❌ 仅支持图片文件', 'error');
+      continue;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const id = 'custom_' + (++customIdCounter);
+      const name = file.name.replace(/\.[^.]+$/, '');
+      customGauges.push({ id, name, dataUrl: e.target.result });
+      renderCustomGauges();
+      showToast('✅ 已添加: ' + name, 'success');
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function renderCustomGauges() {
+  const container = document.getElementById('customGaugesContainer');
+  const grid = document.getElementById('customGaugeGrid');
+  
+  if (customGauges.length === 0) {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'block';
+  grid.innerHTML = customGauges.map(g => `
+    <div class="gauge-card" data-gauge="${g.id}" data-type="custom">
+      <img class="gauge-card-image" src="${g.dataUrl}" alt="${g.name}">
+      <div class="gauge-card-body">
+        <div class="gauge-card-header">
+          <span class="gauge-card-name">${g.name}</span>
+          <span class="badge badge-custom">自定义</span>
+        </div>
+        <p class="gauge-card-desc">用户上传的自定义表盘</p>
+        <div class="gauge-card-actions">
+          <button class="btn btn-secondary" onclick="previewGauge('${g.id}')">👁 预览</button>
+          <button class="btn btn-primary" onclick="selectCustomGauge('${g.id}')">✅ 选择</button>
+          <button class="btn btn-secondary" onclick="removeCustomGauge('${g.id}')" style="color:var(--accent)">🗑</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function removeCustomGauge(id) {
+  customGauges = customGauges.filter(g => g.id !== id);
+  if (selectedGauge && selectedGauge.id === id) {
+    selectedGauge = null;
+  }
+  renderCustomGauges();
+  showToast('已删除自定义表盘', 'success');
+}
+
+// ===== Download Selection Display =====
+function updateSelectionDisplay() {
+  const el = document.getElementById('currentSelection');
+  if (!selectedGauge) {
+    el.innerHTML = '<p style="color:var(--text-muted)">尚未选择任何表盘，请前往「表盘」页面选择。</p>';
+    return;
+  }
+  el.innerHTML = `
+    <div class="selected-item">
+      <img src="${selectedGauge.src}" alt="${selectedGauge.name}">
+      <span class="selected-item-name">${selectedGauge.name}</span>
+      <span class="badge ${selectedGauge.type === 'preset' ? 'badge-preset' : 'badge-custom'}">${selectedGauge.type === 'preset' ? '预制' : '自定义'}</span>
+    </div>
+  `;
+}
+
+// ===== Generate textures.ini =====
+function generateTexturesIni() {
+  let content = '[options]\n';
+  content += 'version = 1\n';
+  content += 'hash = quick\n\n';
+  content += '[hashes]\n';
+  for (const hash of TACHOMETER_HASHES) {
+    content += hash + ' = CAUGE/' + SPEED_FILENAME + '\n';
+  }
+  return content;
+}
+
+// ===== Download Functions =====
+async function downloadPackage(platform) {
+  if (!selectedGauge) {
+    showToast('❌ 请先选择一个表盘', 'error');
+    return;
+  }
+  
+  showToast('⏳ 正在生成文件包...', 'success');
+  
+  try {
+    // Load JSZip from CDN
+    if (typeof JSZip === 'undefined') {
+      await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');
+    }
+    
+    const zip = new JSZip();
+    
+    // Add textures.ini
+    zip.file('textures.ini', generateTexturesIni());
+    
+    // Add gauge image
+    const imageBlob = await getImageBlob(selectedGauge);
+    zip.file('CAUGE/' + SPEED_FILENAME, imageBlob);
+    
+    // Generate zip
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const filename = platform === 'windows' 
+      ? 'InitialD_Tachometer_Windows.zip' 
+      : 'InitialD_Tachometer_Android.zip';
+    
+    downloadBlob(blob, filename);
+    showToast('✅ 文件包下载成功！', 'success');
+  } catch (err) {
+    console.error(err);
+    showToast('❌ 生成失败: ' + err.message, 'error');
+  }
+}
+
+function downloadIniOnly() {
+  const content = generateTexturesIni();
+  const blob = new Blob([content], { type: 'text/plain' });
+  downloadBlob(blob, 'textures.ini');
+  showToast('✅ textures.ini 下载成功！', 'success');
+}
+
+async function getImageBlob(gauge) {
+  if (gauge.type === 'custom') {
+    // Convert data URL to blob
+    const res = await fetch(gauge.src);
+    return await res.blob();
+  } else {
+    // Fetch preset image
+    const res = await fetch(gauge.src);
+    return await res.blob();
+  }
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+// ===== Toast =====
+function showToast(message, type) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = 'toast ' + type;
+  requestAnimationFrame(() => {
+    toast.classList.add('show');
+  });
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 2500);
+}
+
+// ===== Keyboard =====
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closePreview();
+});
+</script>
+
+</body>
+</html>
