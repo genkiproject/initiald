@@ -696,6 +696,22 @@ body::before {
           </div>
         </div>
       </div>
+
+      <!-- Preset 3 -->
+      <div class="gauge-card" data-gauge="zashiki_warashi" data-type="preset">
+        <img class="gauge-card-image" src="CAUGE/zashiki_warashi.png" alt="座敷童子">
+        <div class="gauge-card-body">
+          <div class="gauge-card-header">
+            <span class="gauge-card-name">座敷童子</span>
+            <span class="badge badge-preset">预制</span>
+          </div>
+          <p class="gauge-card-desc">和风古典主题表盘，座敷童子与金色装饰，优雅神秘风格</p>
+          <div class="gauge-card-actions">
+            <button class="btn btn-secondary" onclick="previewGauge('zashiki_warashi')">👁 预览</button>
+            <button class="btn btn-primary" onclick="selectGauge('zashiki_warashi', 'CAUGE/zashiki_warashi.png', '座敷童子 · 和风古典', 'preset')">✅ 选择</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Upload Custom -->
@@ -976,6 +992,8 @@ function previewGauge(id) {
     gauge = { name: '雪女 · 冰雪风暴', src: 'CAUGE/snow_girl.png', type: 'preset', id: 'snow_girl' };
   } else if (id === 'caution_overspeed') {
     gauge = { name: 'CAUTION OVERSPEED!', src: 'CAUGE/caution_overspeed.png', type: 'preset', id: 'caution_overspeed' };
+  } else if (id === 'zashiki_warashi') {
+    gauge = { name: '座敷童子 · 和风古典', src: 'CAUGE/zashiki_warashi.png', type: 'preset', id: 'zashiki_warashi' };
   } else {
     const custom = customGauges.find(g => g.id === id);
     if (!custom) return;
