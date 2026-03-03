@@ -703,12 +703,30 @@ body::before {
         <div class="gauge-card-body">
           <div class="gauge-card-header">
             <span class="gauge-card-name">座敷童子</span>
-            <span class="badge badge-preset">预制·新</span>
+            <span class="badge badge-preset">预制</span>
           </div>
-          <p class="gauge-card-desc">家中调皮的守护灵。</p>
+          <p class="gauge-card-desc">家中调皮的守护灵。因福得福，因祸得祸。</p>
           <div class="gauge-card-actions">
             <button class="btn btn-secondary" onclick="previewGauge('zashiki_warashi')">👁 预览</button>
             <button class="btn btn-primary" onclick="selectGauge('zashiki_warashi', 'CAUGE/zashiki_warashi.png', '座敷童子 · 和风古典', 'preset')">✅ 选择</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+      <!-- Preset 4 -->
+      <div class="gauge-card" data-gauge="chen_qianyu" data-type="preset">
+        <img class="gauge-card-image" src="CAUGE/chen_qianyu.png" alt="终末地陈千语">
+        <div class="gauge-card-body">
+          <div class="gauge-card-header">
+            <span class="gauge-card-name">终末地：陈千语</span>
+            <span class="badge badge-preset">预制·新</span>
+          </div>
+          <p class="gauge-card-desc">当断即断！当破即破！当弃即弃！</p>
+          <div class="gauge-card-actions">
+            <button class="btn btn-secondary" onclick="previewGauge('chen_qianyu')">👁 预览</button>
+            <button class="btn btn-primary" onclick="selectGauge('chen_qianyu', 'CAUGE/chen_qianyu.png', '陈千语 · 简约科技', 'preset')">✅ 选择</button>
           </div>
         </div>
       </div>
@@ -994,6 +1012,9 @@ function previewGauge(id) {
     gauge = { name: 'CAUTION OVERSPEED!', src: 'CAUGE/caution_overspeed.png', type: 'preset', id: 'caution_overspeed' };
   } else if (id === 'zashiki_warashi') {
     gauge = { name: '座敷童子 · 和风古典', src: 'CAUGE/zashiki_warashi.png', type: 'preset', id: 'zashiki_warashi' };
+  } else if (id === 'zashiki_warashi') {
+    gauge = { name: '陈千语 · 简约科技', src: 'CAUGE/chen_qianyu.png', type: 'preset', id: 'chen_qianyu' };
+  }
   } else {
     const custom = customGauges.find(g => g.id === id);
     if (!custom) return;
